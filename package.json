@@ -33,7 +33,7 @@
     "@modelcontextprotocol/sdk": "^1.27.0",
     "@ngrok/ngrok": "^1.4.1",
     "commander": "^13.1.0",
-    "mcp-proxy": "^6.0.0"
+    "mcp-proxy": ">=6.0.0 <6.3.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
