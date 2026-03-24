@@ -1,0 +1,53 @@
+{
+  "name": "@kongyo2/ngrok-mcp-host",
+  "version": "0.1.0",
+  "description": "Expose any MCP server as a remote MCP via ngrok tunnel",
+  "type": "module",
+  "bin": {
+    "ngrok-mcp-host": "dist/index.js"
+  },
+  "main": "dist/server.js",
+  "types": "dist/server.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "oxlint --silent",
+    "lint:strict": "oxlint --deny-warnings",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ngrok",
+    "remote",
+    "tunnel",
+    "proxy",
+    "stdio",
+    "streamable-http",
+    "sse"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@ngrok/ngrok": "^1.4.1",
+    "commander": "^13.1.0",
+    "mcp-proxy": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "oxlint": "^1.56.0",
+    "prettier": "^3.8.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
+}
