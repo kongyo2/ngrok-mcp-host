@@ -33,6 +33,62 @@ function resolveCommand(
   return { command, args };
 }
 
+async function connectToMCPServer(
+  resolved: { command: string; args: string[] },
+  debug: boolean,
+): Promise<{ client: Client; server: Server }> {
+  const transport = new StdioClientTransport({
+    command: resolved.command,
+    args: resolved.args,
+    env: process.env as Record<string, string>,
+    stderr: "inherit",
+  });
+
+  const client = new Client(
+    { name: "ngrok-mcp-host", version: "0.1.0" },
+    { capabilities: {} },
+  );
+
+  try {
+    await client.connect(transport);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `Failed to connect to MCP server (${resolved.command} ${resolved.args.join(" ")}): ${msg}`,
+      { cause: err },
+    );
+  }
+
+  debugLog(debug, "Connected to local MCP server");
+
+  const capabilities = client.getServerCapabilities() || {};
+  const serverVersion = client.getServerVersion();
+
+  debugLog(debug, `Server: ${serverVersion?.name}@${serverVersion?.version}`);
+  debugLog(debug, `Capabilities: ${JSON.stringify(capabilities)}`);
+
+  const server = new Server(
+    {
+      name: serverVersion?.name || "mcp-server",
+      version: serverVersion?.version || "0.0.0",
+    },
+    { capabilities },
+  );
+
+  await proxyServer({ server, client, serverCapabilities: capabilities });
+
+  server.onclose = () => {
+    debugLog(debug, "Session closed, cleaning up subprocess...");
+    client.close().catch(() => {});
+  };
+
+  server.onerror = (error: Error) => {
+    debugLog(debug, "Server error:", error.message);
+  };
+
+  return { client, server };
+}
+
 export async function startMCPHost(
   commandArgs: string[],
   options: HostOptions,
@@ -56,54 +112,40 @@ export async function startMCPHost(
   debugLog(debug, `Command: ${resolved.command} ${resolved.args.join(" ")}`);
   debugLog(debug, `Port: ${port}`);
 
+  // Pre-flight check: verify the MCP server command works
+  console.log("  Verifying MCP server command...");
+  {
+    const transport = new StdioClientTransport({
+      command: resolved.command,
+      args: resolved.args,
+      env: process.env as Record<string, string>,
+      stderr: "inherit",
+    });
+    const client = new Client(
+      { name: "ngrok-mcp-host", version: "0.1.0" },
+      { capabilities: {} },
+    );
+    try {
+      await client.connect(transport);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new Error(
+        `Failed to connect to MCP server (${resolved.command} ${resolved.args.join(" ")}): ${msg}`,
+        { cause: err },
+      );
+    }
+    const serverVersion = client.getServerVersion();
+    console.log(
+      `  ✓ ${serverVersion?.name || "MCP server"}@${serverVersion?.version || "unknown"} ready`,
+    );
+    await client.close();
+  }
+
   // Build startHTTPServer options
   const httpOptions: Record<string, unknown> = {
     createServer: async (_req: http.IncomingMessage) => {
       debugLog(debug, "New session: spawning MCP server subprocess...");
-
-      const transport = new StdioClientTransport({
-        command: resolved.command,
-        args: resolved.args,
-        env: process.env as Record<string, string>,
-        stderr: "inherit",
-      });
-
-      const client = new Client(
-        { name: "ngrok-mcp-host", version: "0.1.0" },
-        { capabilities: {} },
-      );
-
-      await client.connect(transport);
-      debugLog(debug, "Connected to local MCP server");
-
-      const capabilities = client.getServerCapabilities() || {};
-      const serverVersion = client.getServerVersion();
-
-      debugLog(
-        debug,
-        `Server: ${serverVersion?.name}@${serverVersion?.version}`,
-      );
-      debugLog(debug, `Capabilities: ${JSON.stringify(capabilities)}`);
-
-      const server = new Server(
-        {
-          name: serverVersion?.name || "mcp-server",
-          version: serverVersion?.version || "0.0.0",
-        },
-        { capabilities },
-      );
-
-      await proxyServer({ server, client, serverCapabilities: capabilities });
-
-      server.onclose = () => {
-        debugLog(debug, "Session closed, cleaning up subprocess...");
-        client.close().catch(() => {});
-      };
-
-      server.onerror = (error: Error) => {
-        debugLog(debug, "Server error:", error.message);
-      };
-
+      const { server } = await connectToMCPServer(resolved, debug);
       return server;
     },
     port,
