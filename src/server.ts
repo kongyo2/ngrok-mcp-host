@@ -114,12 +114,32 @@ export async function startMCPHost(
 
   // Pre-flight check: verify the MCP server command works
   console.log("  Verifying MCP server command...");
-  const { client: preflight } = await connectToMCPServer(resolved, debug);
-  const preflightVersion = preflight.getServerVersion();
-  console.log(
-    `  ✓ ${preflightVersion?.name || "MCP server"}@${preflightVersion?.version || "unknown"} ready`,
-  );
-  await preflight.close();
+  {
+    const transport = new StdioClientTransport({
+      command: resolved.command,
+      args: resolved.args,
+      env: process.env as Record<string, string>,
+      stderr: "inherit",
+    });
+    const client = new Client(
+      { name: "ngrok-mcp-host", version: "0.1.0" },
+      { capabilities: {} },
+    );
+    try {
+      await client.connect(transport);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new Error(
+        `Failed to connect to MCP server (${resolved.command} ${resolved.args.join(" ")}): ${msg}`,
+        { cause: err },
+      );
+    }
+    const serverVersion = client.getServerVersion();
+    console.log(
+      `  ✓ ${serverVersion?.name || "MCP server"}@${serverVersion?.version || "unknown"} ready`,
+    );
+    await client.close();
+  }
 
   // Build startHTTPServer options
   const httpOptions: Record<string, unknown> = {
