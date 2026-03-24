@@ -1,6 +1,6 @@
 {
   "name": "@kongyo2/ngrok-mcp-host",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Expose any MCP server as a remote MCP via ngrok tunnel",
   "type": "module",
   "bin": {
