@@ -1,5 +1,9 @@
 # @kongyo2/ngrok-mcp-host
 
+[![CI](https://github.com/kongyo2/ngrok-mcp-host/actions/workflows/ci.yml/badge.svg)](https://github.com/kongyo2/ngrok-mcp-host/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/%40kongyo2%2Fngrok-mcp-host)](https://www.npmjs.com/package/@kongyo2/ngrok-mcp-host)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kongyo2/ngrok-mcp-host)
+
 Expose any local MCP (Model Context Protocol) server as a remote MCP server via ngrok tunnel.
 
 Takes any stdio-based MCP server command and makes it accessible over the internet through ngrok, supporting both Streamable HTTP and SSE transports.

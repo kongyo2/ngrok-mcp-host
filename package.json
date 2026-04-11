@@ -15,7 +15,8 @@
     "format:check": "prettier --check .",
     "lint": "oxlint --silent",
     "lint:strict": "oxlint --deny-warnings",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [
     "mcp",
